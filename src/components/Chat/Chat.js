@@ -53,9 +53,10 @@ const Chat = ({location}) => {
     return (
         <div className='container'>
             <input type='text'
-                onClick={(event)=>setMessage(event.target.value)}
+                onChange={(event)=>setMessage(event.target.value)}
                 placeholder='Type your message'
                 onKeyPress={(event)=>event.key==='Enter' ? sendMessage(event) : null}
+                value={message}
             />
         </div>
     )
