@@ -1,17 +1,35 @@
 import React, {useState} from 'react'
-import {Link} from 'react-router-dom'
-import Button from '@material-ui/core/Button';
+import {Link, Redirect} from 'react-router-dom'
+import FacebookLogin from 'react-facebook-login';
 
 const Join = () => {
     const [name, setName] = useState('')
     const [room, setRoom] = useState('')
-    return (<div>
+    const [loggedin, setLoggedin] = useState(false)
+    
+    const responseFacebook = (response) => {
+        console.log(response);
+        setLoggedin(true)
+        setName(response.name)
+        setRoom('101')
+    }
+    const redirectUrl = `chat?name=${name}&room=${room}`
+return (<div>
         <h1>Join</h1>
-        <div><input type='text' placeholder='Enter name' onChange={(event)=>setName(event.target.value)}/></div>
-        <div><input type='text' placeholder='Enter room' onChange={(event)=>setRoom(event.target.value)}/></div>
-        <Link onClick={(event)=>{(!name || !room) && event.preventDefault()}} to={`chat?name=${name}&room=${room}`}>
-            <Button variant="contained" color="primary">Submit</Button>
-        </Link>
+        {
+            loggedin && name && room
+            ?
+                <Redirect to={redirectUrl} />
+            :
+                <FacebookLogin
+                    appId="2417264378305959"
+                    autoLoad={false}
+                    fields="name,email,picture"
+                    callback={responseFacebook}
+                    scope="public_profile,user_friends"
+                />
+        }
+
     </div>
     )
 }
