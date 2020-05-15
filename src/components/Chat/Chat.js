@@ -2,9 +2,46 @@ import React, { useEffect, useState } from 'react'
 import queryString from 'query-string'
 import io from 'socket.io-client'
 import {Layout, List, Button, Input } from 'antd'
+import Sketch from "react-p5";
+ 
 const { Header, Footer, Sider, Content } = Layout
 
 let socket
+
+const setup = (p5, canvasParentRef) => {
+    p5.createCanvas(500, 500).parent(canvasParentRef)
+    p5.background(0)
+    
+	socket.on('mouse', data => {
+        p5.fill(0,0,255);
+        p5.noStroke();
+        p5.ellipse(data.x, data.y, 20, 20);
+    })
+}
+
+const mouseDragged = (p5) => {
+    //console.log('p5', p5)
+	p5.fill(255);
+	p5.noStroke();
+	p5.ellipse(p5.mouseX, p5.mouseY, 20 ,20)
+	sendmouse(p5.mouseX, p5.mouseY)
+}
+
+// Function for sending to the socket
+const sendmouse = (xpos, ypos) => {
+	// We are sending!
+	console.log("sendmouse: " + xpos + " " + ypos);
+	
+	// Make a little object with  and y
+	var data = {
+		x: xpos,
+		y: ypos
+	};
+
+	// Send that object to the socket
+  	socket.emit('mouse',data);
+}
+
 const ENDPOINT = 'http://localhost:5000/'
 const Chat = ({location}) => {
     const [name, setName] = useState('')
@@ -12,10 +49,8 @@ const Chat = ({location}) => {
     const [users, setUsers] = useState('');
     const [message, setMessage] = useState()
     const [messages, setMessages] = useState([])
+    const [view, setView] = useState('canvas')
     
-    useEffect(()=>{
-
-    })
     useEffect(()=>{
         const {name, room} = queryString.parse(location.search)
         
@@ -53,23 +88,37 @@ const Chat = ({location}) => {
             socket.emit('sendMessage', message, () => setMessage(''));
         }
     }
-    
-    console.log('Message: ', message)
-    console.log('Messages: ', messages)
+    const chatroomHandler = () => {
+        setView('chatroom')
+    }
+
+    const blackboardHandler = () => {
+        setView('blackboard')
+    }
     return (
         <Layout>
-            <Header>Header</Header>
+            <Header>
+                <span style={{border: '1px solid white', color: '#ccc', padding: '24px'}} className='view' onClick={chatroomHandler}>Chatroom</span>
+                <span style={{border: '1px solid white', color: '#ccc', padding: '24px'}} className='view' onClick={blackboardHandler}>Black board</span>
+            </Header>
             <Layout>
                 <Content>
-                    <List
-                        style={{height: '500px', overflowX: 'scroll'}}
-                        size="large"
-                        header={<div>Header</div>}
-                        footer={<div>Footer</div>}
-                        bordered
-                        dataSource={messages}
-                        renderItem={item => <List.Item>{`${item.user}: ${item.text}`}</List.Item>}
-                    />
+
+                    {
+                        view === 'chatroom'
+                        ?
+                            <List
+                                style={{height: '500px', overflowX: 'scroll'}}
+                                size="large"
+                                header={<div>Header</div>}
+                                footer={<div>Footer</div>}
+                                bordered
+                                dataSource={messages}
+                                renderItem={item => <List.Item>{`${item.user}: ${item.text}`}</List.Item>}
+                            />
+                        :
+                            <Sketch setup={setup} mouseDragged={mouseDragged}/>
+                    }
                 </Content>
                 <Sider>
                     <List
